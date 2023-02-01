@@ -51,6 +51,7 @@ def show_pose(T0e,frame):
 def show_all_FK(state):
     q = state['position']
     joints, T0e = fk.forward(q)
+    joints = joints[1:8, :]
     show_pose(T0e,"endeffector")
     for i in range(7):
         show_joint_position(joints,i)
@@ -65,6 +66,7 @@ def show_all_FK(state):
 # The first configuration below matches the dimensional drawing in the handout
 configurations = [
     np.array([ 0,    0,     0, -pi/2,     0, pi/2, pi/4 ]),
+    np.array([ 0,    0,  pi/4, -pi/2,     0, pi/2, pi/4 ]),
     np.array([ pi/2, 0,  pi/4, -pi/2, -pi/2, pi/2,    0 ]),
     np.array([ 0,    0, -pi/2, -pi/4,  pi/2, pi,   pi/4 ]),
 ]

@@ -1,6 +1,13 @@
 import numpy as np
 from math import pi
 
+def compute_DH_matrix(a, alpha, d, theta):
+    A = np.array([[np.cos(theta), -np.sin(theta)*np.cos(alpha), np.sin(theta)*np.sin(alpha), a*np.cos(theta)],
+                  [np.sin(theta), np.cos(theta)*np.cos(alpha), -np.cos(theta)*np.sin(alpha), a*np.sin(theta)],
+                  [0, np.sin(alpha), np.cos(alpha), d],
+                  [0, 0, 0, 1]])
+    return A
+
 class FK():
 
     def __init__(self):
@@ -8,8 +15,42 @@ class FK():
         # TODO: you may want to define geometric parameters here that will be
         # useful in computing the forward kinematics. The data you will need
         # is provided in the lab handout
+        DH_param0 = {'a': 0, 'alpha': 0, 'd': 0.141, 'theta': 0}
+        DH_param1 = {'a': 0, 'alpha': -pi/2, 'd': 0.192, 'theta': 0}
+        DH_param2 = {'a': 0, 'alpha': pi/2, 'd': 0, 'theta': 0}
+        DH_param3 = {'a': 0.0825, 'alpha': pi/2, 'd': 0.195+0.121, 'theta': 0}
+        DH_param4 = {'a': 0.0825, 'alpha': pi/2, 'd': 0, 'theta': pi/2+pi/2}
+        DH_param5 = {'a': 0, 'alpha': -pi/2, 'd': 0.125+0.259, 'theta': 0}
+        DH_param6 = {'a': 0.088, 'alpha': pi/2, 'd': 0, 'theta': -pi/2-pi/2}
+        DH_param7 = {'a': 0, 'alpha': 0, 'd': 0.051+0.159, 'theta': -pi/4}
 
-        pass
+        self.DH_params = [DH_param0, DH_param1, DH_param2, DH_param3, DH_param4, DH_param5, DH_param6, DH_param7]
+    
+    def compute_DH_i(self, i, q):
+        # give the A matrix from link i-1 to i
+        assert i >= 1
+        id = i - 1
+        DH_param = self.DH_params[id]
+        a = DH_param['a']
+        alpha = DH_param['alpha']
+        d = DH_param['d']
+        theta = DH_param['theta'] + q[id - 1] if id > 0 else DH_param['theta'] 
+        return compute_DH_matrix(a, alpha, d, theta)
+
+    def compute_Hi(self, i, q):
+        # give the H matrix from base to link i
+        assert i >= 1
+        for k in range(1, i+1):
+            if k == 1:
+                H = self.compute_DH_i(k, q)
+            else:
+                H = H @ self.compute_DH_i(k, q)
+        return H
+
+    def forward_dbg(self, q):
+        T0s = [self.compute_Hi(i, q) for i in range(1, 9)]
+        T0s.insert(0, np.eye(4))
+        return T0s
 
     def forward(self, q):
         """
@@ -26,9 +67,18 @@ class FK():
         """
 
         # Your Lab 1 code starts here
+        jointPosition1 = (self.compute_Hi(1, q) @ np.array([0, 0, 0, 1]))[:3]
+        jointPosition2 = (self.compute_Hi(2, q) @ np.array([0, 0, 0, 1]))[:3]
+        jointPosition3 = (self.compute_Hi(3, q) @ np.array([0, 0, 0.195, 1]))[:3]
+        jointPosition4 = (self.compute_Hi(4, q) @ np.array([0, 0, 0, 1]))[:3]
+        jointPosition5 = (self.compute_Hi(5, q) @ np.array([0, 0, 0.125, 1]))[:3]
+        jointPosition6 = (self.compute_Hi(6, q) @ np.array([0, 0, -0.015, 1]))[:3]
+        jointPosition7 = (self.compute_Hi(7, q) @ np.array([0, 0, 0.051, 1]))[:3]
+        jointPosition8 = (self.compute_Hi(8, q) @ np.array([0, 0, 0, 1]))[:3]
 
-        jointPositions = np.zeros((8,3))
-        T0e = np.identity(4)
+        jointPositions = np.stack([jointPosition1, jointPosition2, jointPosition3, jointPosition4, jointPosition5, jointPosition6, jointPosition7, jointPosition8])
+        assert jointPositions.shape == (8, 3)
+        T0e = self.compute_Hi(8, q)
 
         # Your code ends here
 
