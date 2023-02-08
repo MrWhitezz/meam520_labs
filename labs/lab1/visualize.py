@@ -51,10 +51,10 @@ def show_pose(T0e,frame):
 def show_all_FK(state):
     q = state['position']
     joints, T0e = fk.forward(q)
-    joints = joints[1:8, :]
     show_pose(T0e,"endeffector")
     for i in range(7):
         show_joint_position(joints,i)
+        
 
 
 ########################
@@ -69,6 +69,7 @@ configurations = [
     np.array([ 0,    0,  pi/4, -pi/2,     0, pi/2, pi/4 ]),
     np.array([ pi/2, 0,  pi/4, -pi/2, -pi/2, pi/2,    0 ]),
     np.array([ 0,    0, -pi/2, -pi/4,  pi/2, pi,   pi/4 ]),
+    np.array([ 0,    0,  pi/2, -pi/4,  pi/2, pi,   pi/4 ]),
 ]
 
 ####################
@@ -90,6 +91,10 @@ if __name__ == "__main__":
         for i, q in enumerate(configurations):
             print("Moving to configuration " + str(i) + "...")
             arm.safe_move_to_position(q)
+            q_real = arm.get_positions()
+            print('joint angles: ' + str(q_real) + '\n')
+            joints, T0e = fk.forward(q_real)
+            print("FK solution: T0e = \n" + str(T0e) + "\n")
             if i < len(configurations) - 1:
                 input("Press Enter to move to next configuration...")
 
