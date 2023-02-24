@@ -9,9 +9,26 @@ def FK_velocity(q_in, dq):
     velocity - 6 x 1 vector corresponding to the end effector velocities.    
     """
 
-    ## STUDENT CODE GOES HERE
+    J = calcJacobian(q_in)
+    dp = dq.reshape((7,1))
+    velocity = J @ dq
 
-    velocity = np.zeros((6, 1))
+    print('velocity', velocity.shape)
+    print('dq', dq.shape)
+    print('J', J.shape)
+    velocity = velocity.reshape((6,1))
 
-
+    assert velocity.shape == (6, 1)
+    
     return velocity
+
+
+if __name__ == '__main__':
+    q = np.array([0, 0, 0, 0, 0, 0, 0])
+    dq = np.array([1, 0, 0, 0, 0, 0, 0])
+    v = FK_velocity(q, dq)
+    print('v', v)
+    linear_velocity = v[:3]
+    angular_velocity = v[3:]
+    print('linear_velocity', linear_velocity)
+    print('angular_velocity', angular_velocity)

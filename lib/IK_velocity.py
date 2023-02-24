@@ -23,5 +23,16 @@ def IK_velocity(q_in, v_in, omega_in):
 
     v_in = v_in.reshape((3,1))
     omega_in = omega_in.reshape((3,1))
-    
+
+    J = calcJacobian(q_in)
+    v = np.vstack((v_in, omega_in))
+    for i in range(6):
+        if np.isnan(v[i]):
+            v[i] = 0
+            J[i] = 0
+
+    dq = np.linalg.lstsq(J, v, rcond=None)[0].T
+
+    assert dq.shape == (1, 7)
+
     return dq

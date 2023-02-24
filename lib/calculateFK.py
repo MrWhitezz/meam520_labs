@@ -99,8 +99,17 @@ class FK():
 
         """
         # STUDENT CODE HERE: This is a function needed by lab 2
+        for i in range(1, 8):
+            H = self.compute_Hi(i, q)
+            if i == 1:
+                axis_of_rotation_list = H[:3, 2]
+            else:
+                axis_of_rotation_list = np.vstack([axis_of_rotation_list, H[:3, 2]])
+        
+        axis_of_rotation_list = axis_of_rotation_list.T
+        assert axis_of_rotation_list.shape == (3, 7)
+        return(axis_of_rotation_list)
 
-        return()
     
     def compute_Ai(self, q):
         """
@@ -120,9 +129,11 @@ if __name__ == "__main__":
     fk = FK()
 
     # matches figure in the handout
-    q = np.array([0,0,0,-pi/2,0,pi/2,pi/4])
+    # q = np.array([0,0,0,-pi/2,0,pi/2,pi/4])
+    q = np.array([0., 0., 0., 0., 0., 0., 0.])
 
     joint_positions, T0e = fk.forward(q)
+    T0e = np.round(T0e, 3)
     
     print("Joint Positions:\n",joint_positions)
     print("End Effector Pose:\n",T0e)
