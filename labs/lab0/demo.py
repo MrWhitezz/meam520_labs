@@ -16,16 +16,26 @@ from math import pi
 from core.interfaces import ArmController
 
 rospy.init_node('demo')
+print('start demo.py')
 
 arm = ArmController()
 arm.set_arm_speed(0.2)
 
 arm.close_gripper()
 
-q = arm.neutral_position()
-arm.safe_move_to_position(q)
-arm.open_gripper()
+# q = arm.neutral_position()
+# print('q init: ', q)
+# arm.safe_move_to_position(q)
+# arm.open_gripper()
 
-q = np.array([0,-1 ,0,-2,0,1,1]) # TODO: try changing this!
+# q = np.array([0,-1 ,0,-2,0,1,1]) # TODO: try changing this!
+q1 = np.array([0, 0, 0, -1, 0, 0, 0]) 
+q2 = np.array([0, 1, -1, -0.1, 0, 0, 0]) 
+q3 = np.array([0, 0, 0, -0.1, 0, 1, 0]) 
+q4 = np.array([0, -1, 0, -1, 0, 1, 0.785]) 
+q5 = np.array([0, -1, 0, -2, 0, 1, 0.785]) 
+q = np.array([0, 0, 0., 0, 0., 0, 0.])
 arm.safe_move_to_position(q)
 arm.close_gripper()
+
+print('finish demo.py')

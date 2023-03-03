@@ -2,6 +2,7 @@ from lib.calculateFK import FK
 from core.interfaces import ArmController
 
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 
 fk = FK()
@@ -26,7 +27,16 @@ limits = [
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
+def get_random_joint_angles():
+    return np.array([np.random.uniform(limits[i]['lower'], limits[i]['upper']) for i in range(7)])
+
 # TODO: update this with real results
-ax.scatter(1,1,1) # plot the point (1,1,1)
+# ax.scatter(1,1,1) # plot the point (1,1,1)
+for i in range(1000):
+    q = get_random_joint_angles()
+    joints, T0e = fk.forward(q)
+    ax.scatter(T0e[0,3], T0e[1,3], T0e[2,3])
+
+
 
 plt.show()

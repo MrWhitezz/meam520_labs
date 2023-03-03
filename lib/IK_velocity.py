@@ -35,4 +35,7 @@ def IK_velocity(q_in, v_in, omega_in):
 
     assert dq.shape == (1, 7)
 
+    # debug
+    dq = dq.reshape(7,)
+
     return dq
