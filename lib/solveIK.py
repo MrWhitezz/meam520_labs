@@ -72,6 +72,16 @@ class IK:
         displacement = np.zeros(3)
         axis = np.zeros(3)
 
+        displacement = target[:3,3] - current[:3,3]
+        displacement = displacement.reshape(3)
+
+        R_c = current[:3,:3]
+        R_t = target[:3,:3]
+        R = R_t @ R_c.T
+
+        S = (R - R.T) / 2
+        axis = np.array([S[2,1], S[0,2], S[1,0]])
+
         ## END STUDENT CODE
 
         return displacement, axis
@@ -104,6 +114,12 @@ class IK:
         distance = 0
         angle = 0
 
+        distance = np.linalg.norm(G[:3,3] - H[:3,3])
+        t = ((np.trace(G[:3,:3].T @ H[:3,:3]) - 1) / 2)
+        # round the value t to avoid acos error
+        t = min(max(t, -1), 1)
+        angle = acos(t)
+
         ## END STUDENT CODE
 
         return distance, angle
@@ -128,6 +144,12 @@ class IK:
         ## STUDENT CODE STARTS HERE
 
         success = False
+        _, T0e = self.fk.forward(q)
+        assert T0e.shape == (4,4)
+        distance, angle = self.distance_and_angle(T0e, target)
+        if distance < self.linear_tol and angle < self.angular_tol and \
+            all(self.lower < q) and all(q < self.upper):
+            success = True
 
         ## END STUDENT CODE
 
@@ -156,6 +178,11 @@ class IK:
         ## STUDENT CODE STARTS HERE
 
         dq = np.zeros(7)
+        fk = FK()
+        ik = IK()
+        current = fk.forward(q)[1]
+        displacement, axis = ik.displacement_and_axis(target, current)
+        dq = IK_velocity(q, displacement, axis)
 
         ## END STUDENT CODE
 
@@ -213,6 +240,8 @@ class IK:
 
         q = seed
         rollout = []
+        alpha = 0.0001
+        lamda = 0.5
 
         while True:
 
@@ -227,11 +256,13 @@ class IK:
             ## STUDENT CODE STARTS HERE
 
             # Task Prioritization
-            dq = np.zeros(7) # TODO: implement me!
+            dq = (dq_ik + dq_center * alpha) * lamda
 
             # Termination Conditions
-            if True: # TODO: check termination conditions
-                break # exit the while loop if conditions are met!
+            # if True: # TODO: check termination conditions
+            #     break # exit the while loop if conditions are met!
+            if np.linalg.norm(dq) < self.min_step_size or len(rollout) > self.max_steps:
+                break
 
             ## END STUDENT CODE
 
