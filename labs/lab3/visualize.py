@@ -100,17 +100,28 @@ def transform(d,rpy):
 # to generate your own tests, or directly write out transforms you wish to test.
 
 targets = [
-    transform( np.array([-.2, -.3, .5]), np.array([0,pi,pi])            ),
-    transform( np.array([-.2, .3, .5]),  np.array([pi/6,5/6*pi,7/6*pi]) ),
-    transform( np.array([.5, 0, .5]),    np.array([0,pi,pi])            ),
-    transform( np.array([.7, 0, .5]),    np.array([0,pi,pi])            ),
-    transform( np.array([.2, .6, 0.5]),  np.array([0,pi,pi])            ),
-    transform( np.array([.2, .6, 0.5]),  np.array([0,pi,pi-pi/2])       ),
-    transform( np.array([.2, -.6, 0.5]), np.array([0,pi-pi/2,pi])       ),
-    transform( np.array([.2, -.6, 0.5]), np.array([pi/4,pi-pi/2,pi])    ),
-    transform( np.array([.5, 0, 0.2]),   np.array([0,pi-pi/2,pi])       ),
-    transform( np.array([.4, 0, 0.2]),   np.array([pi/2,pi-pi/2,pi])    ),
-    transform( np.array([.4, 0, 0]),     np.array([pi/2,pi-pi/2,pi])    ),
+    # transform( np.array([-.2, -.3, .5]), np.array([0,pi,pi])            ),
+    # transform( np.array([-.2, .3, .5]),  np.array([pi/6,5/6*pi,7/6*pi]) ),
+    # transform( np.array([.5, 0, .5]),    np.array([0,pi,pi])            ),
+    # transform( np.array([.7, 0, .5]),    np.array([0,pi,pi])            ),
+    # transform( np.array([.2, .6, 0.5]),  np.array([0,pi,pi])            ),
+    # transform( np.array([.2, .6, 0.5]),  np.array([0,pi,pi-pi/2])       ),
+    # transform( np.array([.2, -.6, 0.5]), np.array([0,pi-pi/2,pi])       ),
+    # transform( np.array([.2, -.6, 0.5]), np.array([pi/4,pi-pi/2,pi])    ),
+    # transform( np.array([.5, 0, 0.2]),   np.array([0,pi-pi/2,pi])       ),
+    # transform( np.array([.4, 0, 0.2]),   np.array([pi/2,pi-pi/2,pi])    ),
+    # transform( np.array([.4, 0, 0]),     np.array([pi/2,pi-pi/2,pi])    ),
+
+    transform( np.array([.2, .3, 0.5]),  np.array([pi/4,pi/5,pi/2])  ),
+    transform( np.array([-.2,.2, 0.6]),  np.array([pi/4,pi/2,pi/2])  ),
+    transform( np.array([0., 0.2, 0.5]), np.array([pi/2,pi/2,pi/6])  ),
+    transform( np.array([.5, -.1, 0.3]), np.array([0,pi/4,pi/2])  ),
+    transform( np.array([.3, -.2, 0.4]), np.array([pi/2,0,pi/4])  ),
+    transform( np.array([.3, 0, 0.4]),   np.array([pi/4, 0,pi/4])  ),
+    transform( np.array([-.3, .5, 0.5]), np.array([pi/2, pi/2,pi])  ),
+    transform( np.array([.5, .4, 0.5]),  np.array([pi/2, pi,pi/2])  ),
+    transform( np.array([.7, -.1, 0.4]), np.array([pi/6, pi,pi])  ),
+    transform( np.array([.2, -.3, 0.7]), np.array([pi/4, pi, pi])  ),
 ]
 
 ####################
@@ -118,10 +129,17 @@ targets = [
 ####################
 
 np.set_printoptions(suppress=True)
+dts = []
+successes = []
+perf_only = False
 
 if __name__ == "__main__":
 
     arm = ArmController()
+    args = sys.argv
+    if len(args) > 1:
+        assert args[1].startswith("p"), "Invalid argument"
+        perf_only = True
 
     # Iterates through the given targets, using your IK solution
     # Try editing the targets list above to do more testing!
@@ -138,12 +156,30 @@ if __name__ == "__main__":
         stop = perf_counter()
         dt = stop - start
 
+        dts.append(dt)
+        successes.append(int(success))
+
         if success:
             print("Solution found in {time:2.2f} seconds ({it} iterations).".format(time=dt,it=len(rollout)))
+            if perf_only:
+                continue
             arm.safe_move_to_position(q)
         else:
             print('IK Failed for this target using this seed.')
 
 
         if i < len(targets) - 1:
-            input("Press Enter to move to next target...")
+            kk = input("Press Enter to move to next target...")
+            if kk.startswith("k"):
+                exit()
+
+    dts = np.array(dts)
+    mean_dt = np.mean(dts)
+    median_dt = np.median(dts)
+    max_dt = np.max(dts)
+    min_dt = np.min(dts)
+    print("Mean time: {time:2.2f} seconds".format(time=mean_dt))
+    print("Median time: {time:2.2f} seconds".format(time=median_dt))
+    print("Max time: {time:2.2f} seconds".format(time=max_dt))
+    print("Min time: {time:2.2f} seconds".format(time=min_dt))
+    print("Success rate: {rate:2.2f}%".format(rate=100*np.mean(successes)))

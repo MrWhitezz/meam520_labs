@@ -4,7 +4,7 @@ from scipy.linalg import null_space
 
 from lib.calcJacobian import calcJacobian
 from lib.calculateFK import FK
-from lib.IK_velocity import IK_velocity
+from lib.IK_velocity import IK_velocity, second_task
 
 class IK:
 
@@ -240,8 +240,8 @@ class IK:
 
         q = seed
         rollout = []
-        alpha = 0.0001
-        lamda = 0.5
+        alpha = 1.0
+        lamda = 1.0
 
         while True:
 
@@ -251,7 +251,9 @@ class IK:
             dq_ik = self.end_effector_task(q,target)
 
             # Secondary Task - Center Joints
-            dq_center = self.joint_centering_task(q)
+            dq_second = self.joint_centering_task(q)
+            dq_center = second_task(q, dq_second)
+
 
             ## STUDENT CODE STARTS HERE
 

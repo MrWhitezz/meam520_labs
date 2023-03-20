@@ -31,6 +31,7 @@ def IK_velocity(q_in, v_in, omega_in):
             v[i] = 0
             J[i] = 0
 
+    assert v.shape == (6, 1)
     dq = np.linalg.lstsq(J, v, rcond=None)[0].T
 
     assert dq.shape == (1, 7)
@@ -39,3 +40,31 @@ def IK_velocity(q_in, v_in, omega_in):
     dq = dq.reshape(7,)
 
     return dq
+
+def second_task(q_in, dq_second):
+    """
+    :param q_in: 1 x 7 vector corresponding to the robot's current configuration.
+    :param dq_second: 1 x 7 vector corresponding to the desired joint velocities.
+    :return:
+    dq - 1 x 7 vector corresponding to the joint velocities. 
+    """
+
+
+    assert q_in.shape == (7,)
+    assert dq_second.shape == (7,)
+
+    J = calcJacobian(q_in)
+    v = J @ dq_second
+    v = v.reshape((6,1))
+    assert v.shape == (6, 1)
+    dq = np.linalg.lstsq(J, v, rcond=None)[0].T
+
+    assert dq.shape == (1, 7)
+
+    # debug
+    dq = dq.reshape(7,)
+    dq_sol = dq_second - dq
+    assert dq_sol.shape == (7,)
+    
+
+    return dq_sol
