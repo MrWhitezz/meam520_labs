@@ -21,7 +21,7 @@ def rrt(map, start, goal):
     lowerLim = np.array([-2.8973,-1.7628,-2.8973,-3.0718,-2.8973,-0.0175,-2.8973])
     upperLim = np.array([2.8973,1.7628,2.8973,-0.0698,2.8973,3.7525,2.8973])
 
-    return path
+    return np.array(path)
 
 if __name__ == '__main__':
     map_struct = loadmap("../maps/map1.txt")
