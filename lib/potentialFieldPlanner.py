@@ -2,16 +2,10 @@ import numpy as np
 from math import pi, acos
 from scipy.linalg import null_space
 from copy import deepcopy
-'''
 from lib.calcJacobian import calcJacobian
 from lib.calculateFK import FK
 from lib.detectCollision import detectCollision
 from lib.loadmap import loadmap
-'''
-from calcJacobian import calcJacobian
-from calculateFK import FK
-from detectCollision import detectCollision
-from loadmap import loadmap
 
 
 class PotentialFieldPlanner:
