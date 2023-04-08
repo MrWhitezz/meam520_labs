@@ -111,17 +111,20 @@ targets = [
     # transform( np.array([.5, 0, 0.2]),   np.array([0,pi-pi/2,pi])       ),
     # transform( np.array([.4, 0, 0.2]),   np.array([pi/2,pi-pi/2,pi])    ),
     # transform( np.array([.4, 0, 0]),     np.array([pi/2,pi-pi/2,pi])    ),
+    transform( np.array([0, 0.5, 0.5]),  np.array([0, pi, pi])  ),
+ 
+    transform( np.array([.7, .5, 0.5]),  np.array([pi/2,pi/2,pi/2])  ),
 
     transform( np.array([.2, .3, 0.5]),  np.array([pi/4,pi/5,pi/2])  ),
     transform( np.array([-.2,.2, 0.6]),  np.array([pi/4,pi/2,pi/2])  ),
-    transform( np.array([0., 0.2, 0.5]), np.array([pi/2,pi/2,pi/6])  ),
-    transform( np.array([.5, -.1, 0.3]), np.array([0,pi/4,pi/2])  ),
-    transform( np.array([.3, -.2, 0.4]), np.array([pi/2,0,pi/4])  ),
-    transform( np.array([.3, 0, 0.4]),   np.array([pi/4, 0,pi/4])  ),
-    transform( np.array([-.3, .5, 0.5]), np.array([pi/2, pi/2,pi])  ),
+    transform( np.array([0., 0.2, 0.5]), np.array([pi/2,pi/2,pi/6])  ), # error
+    transform( np.array([.5, -.1, 0.3]), np.array([0,pi/4,pi/2])  ), # error
+    transform( np.array([.3, -.2, 0.4]), np.array([pi/2,0,pi/4])  ), 
+    transform( np.array([.3, 0, 0.4]),   np.array([pi/4, 0,pi/4])  ), # error
+    transform( np.array([-.3, .5, 0.5]), np.array([pi/2, pi/2,pi])  ), # last good
     transform( np.array([.5, .4, 0.5]),  np.array([pi/2, pi,pi/2])  ),
-    transform( np.array([.7, -.1, 0.4]), np.array([pi/6, pi,pi])  ),
-    transform( np.array([.2, -.3, 0.7]), np.array([pi/4, pi, pi])  ),
+    transform( np.array([.7, -.1, 0.4]), np.array([pi/6, pi,pi])  ), #good
+    transform( np.array([.2, -.3, 0.7]), np.array([pi/4, pi, pi])  ), # error
 ]
 
 ####################
@@ -130,6 +133,7 @@ targets = [
 
 np.set_printoptions(suppress=True)
 dts = []
+iters = []
 successes = []
 perf_only = False
 
@@ -157,6 +161,7 @@ if __name__ == "__main__":
         dt = stop - start
 
         dts.append(dt)
+        iters.append(len(rollout))
         successes.append(int(success))
 
         if success:
@@ -177,9 +182,19 @@ if __name__ == "__main__":
     mean_dt = np.mean(dts)
     median_dt = np.median(dts)
     max_dt = np.max(dts)
-    min_dt = np.min(dts)
+    # min_dt = np.min(dts)
+
+    iters = np.array(iters)
+    mean_iters = np.mean(iters)
+    median_iters = np.median(iters)
+    max_iters = np.max(iters)
     print("Mean time: {time:2.2f} seconds".format(time=mean_dt))
     print("Median time: {time:2.2f} seconds".format(time=median_dt))
     print("Max time: {time:2.2f} seconds".format(time=max_dt))
-    print("Min time: {time:2.2f} seconds".format(time=min_dt))
+    # print("Min time: {time:2.2f} seconds".format(time=min_dt))
     print("Success rate: {rate:2.2f}%".format(rate=100*np.mean(successes)))
+
+    print("Mean iterations: {it:2.2f}".format(it=mean_iters))
+    print("Median iterations: {it:2.2f}".format(it=median_iters))
+    print("Max iterations: {it:2.2f}".format(it=max_iters))
+

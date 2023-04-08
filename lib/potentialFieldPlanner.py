@@ -7,6 +7,11 @@ from lib.calculateFK import FK
 from lib.detectCollision import detectCollision
 from lib.loadmap import loadmap
 
+eta = 0.01
+zeta = 10.0
+alpha = 0.02
+rho_0 = 0.1
+
 
 class PotentialFieldPlanner:
 
@@ -17,7 +22,7 @@ class PotentialFieldPlanner:
     center = lower + (upper - lower) / 2 # compute middle of range of motion of each joint
     fk = FK()
 
-    def __init__(self, tol=1e-4, max_steps=500, min_step_size=1e-5):
+    def __init__(self, tol=1e-2, max_steps=2000, min_step_size=1e-5):
         """
         Constructs a potential field planner with solver parameters.
 
@@ -59,12 +64,16 @@ class PotentialFieldPlanner:
         """
 
         ## STUDENT CODE STARTS HERE
-
-        att_f = np.zeros((3, 1)) 
+        target = target.reshape(3, 1)
+        current = current.reshape(3, 1)
+        assert target.shape == (3, 1) and current.shape == (3, 1)
+        # att_f = np.zeros((3, 1)) 
+        att_f = - (current - target)
+        assert att_f.shape == (3, 1)
 
         ## END STUDENT CODE
 
-        return att_f
+        return att_f * zeta
 
     @staticmethod
     def repulsive_force(obstacle, current, unitvec=np.zeros((3,1))):
@@ -85,12 +94,26 @@ class PotentialFieldPlanner:
         """
 
         ## STUDENT CODE STARTS HERE
+        current = current.reshape(3, 1)
+        assert current.shape == (3, 1) and unitvec.shape == (3, 1)
 
         rep_f = np.zeros((3, 1)) 
+        dist, unit = PotentialFieldPlanner.dist_point2box(current.T, obstacle)
+        assert dist.shape == (1,) and unit.shape == (1, 3)
+
+        if dist > rho_0:
+            pass
+        elif dist == 0:
+            rep_f = 1e6 * (-unitvec.T)
+            # assert False, "The current joint position is inside the obstacle"
+        else:
+            rep_f = (1/dist - 1/rho_0) * (1/dist**2) * (-unit.T)
+        rep_f = rep_f.reshape(3, 1)
+        assert rep_f.shape == (3, 1)
 
         ## END STUDENT CODE
 
-        return rep_f
+        return rep_f * eta
 
     @staticmethod
     def dist_point2box(p, box):
@@ -164,6 +187,16 @@ class PotentialFieldPlanner:
 
         joint_forces = np.zeros((3, 7)) 
 
+        for i in range(7):
+            att_force = PotentialFieldPlanner.attractive_force(target[:, i], current[:, i])
+            joint_forces[:, i] += att_force.reshape(3,)
+            if len(obstacle) > 0:
+                for j in range(obstacle.shape[0]):
+                    # TODO: compute unit vector from current to closest point on obstacle
+                    # especially for the point inside the obstacle
+                    rep_f = PotentialFieldPlanner.repulsive_force(obstacle[j, :], current[:, i])
+                    joint_forces[:, i] += rep_f.reshape(3,)
+
         ## END STUDENT CODE
 
         return joint_forces
@@ -184,8 +217,20 @@ class PotentialFieldPlanner:
         """
 
         ## STUDENT CODE STARTS HERE
+        J = calcJacobian(q)
+        Jv = J[:3, :]
+        assert Jv.shape == (3, 7) and joint_forces.shape == (3, 7)
 
         joint_torques = np.zeros((1, 7)) 
+
+        for i in range(7):
+            torque = Jv[:, :i+1].T @ joint_forces[:, i]
+            # print('i %d, Jv %s' % (i, Jv[:, :i+1].T))
+            # print('i %d, joint_force %s' % (i, joint_forces[:, i]))
+            # print('i %d, torque %s' % (i, torque))
+            assert torque.shape == (i+1,)
+            joint_torques[:, :i+1] += torque
+        # print('joint_torques %s' % joint_torques)
 
         ## END STUDENT CODE
 
@@ -211,7 +256,7 @@ class PotentialFieldPlanner:
 
         ## STUDENT CODE STARTS HERE
 
-        distance = 0
+        distance = np.linalg.norm(target - current)
 
         ## END STUDENT CODE
 
@@ -234,8 +279,28 @@ class PotentialFieldPlanner:
         """
 
         ## STUDENT CODE STARTS HERE
+        obstacle = map_struct.obstacles
 
-        dq = np.zeros((1, 7))
+        q = q.reshape(7,)
+        target = target.reshape(7,)
+        assert q.shape == (7,) and target.shape == (7,) 
+
+        fk = FK()
+        target_joints, _ = fk.forward(target)
+        target_joints = (target_joints[1:, :]).T
+
+        current_joints, _ = fk.forward(q)
+        current_joints = (current_joints[1:, :]).T
+        assert target_joints.shape == (3, 7) and current_joints.shape == (3, 7)
+        
+
+        joint_forces = PotentialFieldPlanner.compute_forces(target_joints, obstacle, current_joints)
+        # print('joint_forces', joint_forces)
+
+        joint_torques = PotentialFieldPlanner.compute_torques(joint_forces, q)
+        # print('joint_torques', joint_torques)
+
+        dq = joint_torques 
 
         ## END STUDENT CODE
 
@@ -263,25 +328,45 @@ class PotentialFieldPlanner:
 
         q_path = np.array([]).reshape(0,7)
 
+        q = start.reshape(1,7)
+        goal = goal.reshape(1,7)
+        i = 0
+
         while True:
 
             ## STUDENT CODE STARTS HERE
             
             # The following comments are hints to help you to implement the planner
             # You don't necessarily have to follow these steps to complete your code 
+            q_path = np.vstack((q_path, q))
+            i += 1
             
             # Compute gradient 
             # TODO: this is how to change your joint angles 
+            dq = PotentialFieldPlanner.compute_gradient(q, goal, map_struct)
+
 
             # Termination Conditions
-            if True: # TODO: check termination conditions
+            if i > self.max_steps or self.q_distance(goal[:, :6], q[:, :6]) < self.tol: # TODO: check termination conditions
                 break # exit the while loop if conditions are met!
 
             # YOU NEED TO CHECK FOR COLLISIONS WITH OBSTACLES
             # TODO: Figure out how to use the provided function 
 
+
             # YOU MAY NEED TO DEAL WITH LOCAL MINIMA HERE
             # TODO: when detect a local minima, implement a random walk
+            if np.linalg.norm(dq) < self.min_step_size:
+                dq = np.random.randn(1, 7)
+                assert False, 'random walk not implemented'
+            
+            dq = dq / (np.linalg.norm(dq) + 1e-16) 
+
+            # dq[:, -1] += 0.1 * (goal[:, -1] - q[:, -1])
+
+            # Update q
+            assert dq.shape == q.shape
+            q = q + alpha * dq
             
             ## END STUDENT CODE
 
@@ -299,7 +384,7 @@ if __name__ == "__main__":
     
     # inputs 
     map_struct = loadmap("../maps/map1.txt")
-    start = np.array([0,-1,0,-2,0,1.57,0])
+    start = np.array([0,    -1,    0,    -2,     0,    1.57, 0])
     goal =  np.array([-1.2, 1.57 , 1.57, -2.07, -1.57, 1.57, 0.7])
     
     # potential field planning
@@ -307,7 +392,7 @@ if __name__ == "__main__":
     
     # show results
     for i in range(q_path.shape[0]):
-        error = PotentialFieldPlanner.q_distance(q_path[i, :], goal)
-        print('iteration:',i,' q =', q_path[i, :], ' error={error}'.format(error=error))
+        error = PotentialFieldPlanner.q_distance(q_path[i, :6], goal[:6])
+        print('iter:',i,' diff =', q_path[i, :] - goal[:], ' error={:.3f}'.format(error))
 
     print("q path: ", q_path)

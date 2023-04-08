@@ -2,7 +2,7 @@ import sys
 import rospy
 import numpy as np
 from math import pi
-from time import perf_counter
+from time import perf_counter, sleep
 
 from core.interfaces import ArmController
 from lib.potentialFieldPlanner import PotentialFieldPlanner 
@@ -12,9 +12,13 @@ from copy import deepcopy
 
 
 starts = [np.array([0, -1, 0, -2, 0, 1.57, 0]),
-          np.array([0, 0.4, 0, -2.5, 0, 2.7, 0.707])]
+          np.array([0, 0.2, 0, -2.5, 0, 2.7, 0.707]),
+          np.array([0, -1, 0, -1.57, 0, 1.57, 0]),]
+
 goals = [np.array([-1.2, 1.57, 1.57, -2.07, -1.57, 1.57, 0.7]),
-         np.array([1.9, 1.57, -1.57, -1.57, 1.57, 1.57, 0.707])]
+         np.array([1.9, 1.57, -1.57, -1.57, 1.57, 1.57, 0.707]),
+         np.array([-1.0, 1.57, 1.57, -1.57, -1.57, 1.57, 0.7]),]
+
 mapNames = ["map1",
             "map2",
             "map3",
@@ -47,6 +51,10 @@ if __name__ == "__main__":
     input("Press Enter to Send Path to Arm")
 
     gap = 100
-    for i in range(0, path.shape[0], gap):
-        arm.safe_move_to_position(path[i, :])
+    # for i in range(0, path.shape[0], gap):
+    #     arm.safe_move_to_position(path[i, :])
+    arm.safe_move_to_position(path[-1, :])
     print("Trajectory Complete!")
+
+    print('final position: ', path[-1, :])
+    print('goal position: ', goals[index])
